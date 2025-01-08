@@ -4539,6 +4539,53 @@ globalThis.DataUtil = {
 			});
 		},
 
+		async translate (originalText, DICT) {
+			return originalText.map(description => {
+				if (description.entries) {
+					const translatedEntries = translateEntries(description.entries);
+					//printEntriesAsPlainText(translatedEntries);
+					return { ...description, entries: translateEntries(description.entries) };
+				}
+				return description; // Retornar outros casos sem alteração
+			});
+
+
+			function translateEntries(entries) { 
+				var m_entries = entries.map(entry => {
+					if (typeof entry === "string") {
+						// Substituir pelo valor traduzido, se existir no dicionário
+						return DICT[entry] || entry;
+					} else if (typeof entry === "object" && entry.entries) {
+						// Caso seja um objeto com "entries", traduzir recursivamente
+						return { ...entry, entries: translateEntries(entry.entries) };
+					} else if (entry.type === "list" && entry.items) {
+						// Caso seja um objeto com "items", traduzir cada item
+						return { ...entry, items: entry.items.map(item => DICT[item] || item) };
+					}
+					return entry; // Retornar outros casos sem alteração
+				});
+				return m_entries
+			}
+			
+			// function printEntriesAsPlainText(entries) {
+			// 	// Função recursiva para extrair texto plano de todas as entradas
+			// 	entries.forEach(entry => {
+			// 		if (typeof entry === "string") {
+			// 			console.log(entry); // Imprime strings diretamente
+			// 		} else if (typeof entry === "object") {
+			// 			if (entry.type === "list" && entry.items) {
+			// 				// Para listas, imprime cada item
+			// 				entry.items.forEach(item => console.log(item));
+			// 			} else if (entry.entries) {
+			// 				// Recorre em "entries"
+			// 				printEntriesAsPlainText(entry.entries);
+			// 			}
+			// 		}
+			// 	});
+			// }
+			
+		},
+
 		COPY_ENTRY_PROPS: [
 			"action", "bonus", "reaction", "trait", "legendary", "mythic", "variant", "spellcasting",
 			"actionHeader", "bonusHeader", "reactionHeader", "legendaryHeader", "mythicHeader",
@@ -6064,9 +6111,18 @@ globalThis.DataUtil = {
 
 		static async loadJSON ({isAddBaseRaces = false} = {}) {
 			const cacheKey = `site-${isAddBaseRaces}`;
+			const TRANSLATE_RACES_DICT = await DataUtil.loadJSON(`${Renderer.get().baseUrl}data/translations_races_pt-br.json`);
+			const raceAndSubraceJson = await this.loadRawJSON()
+			console.log(raceAndSubraceJson)
+			const transletedRaces = await DataUtil.generic.translate(raceAndSubraceJson.race, TRANSLATE_RACES_DICT)
+			const transletedSubraces = await DataUtil.generic.translate(raceAndSubraceJson.subrace, TRANSLATE_RACES_DICT)
+			const raceAndSubArray = {
+				race: transletedRaces,
+				subrace: transletedSubraces
+			}
 			DataUtil.race._psLoadJson[cacheKey] ||= (async () => {
 				return DataUtil.race.getPostProcessedSiteJson(
-					await this.loadRawJSON(),
+					raceAndSubArray,
 					{isAddBaseRaces},
 				);
 			})();
@@ -6242,68 +6298,22 @@ globalThis.DataUtil = {
 					subclass: await DataLoader.pCacheAndGetAllSite("subclass"),
 				};
 			})();
-		}
+		}		
 		
-		
-		static async translateTexts(text) {
-			// Função recursiva para traduzir textos em "entries"
-			const TRANSLATE_DICT = await DataUtil.loadJSON(`${Renderer.get().baseUrl}data/translations_pt-br.json`);
-			function translateEntries(entries) { 
-				
-				var m_entries = entries.map(entry => {
-					if (typeof entry === "string") {
-						// Substituir pelo valor traduzido, se existir no dicionário
-						return TRANSLATE_DICT[entry] || entry;
-					} else if (typeof entry === "object" && entry.entries) {
-						// Caso seja um objeto com "entries", traduzir recursivamente
-						return { ...entry, entries: translateEntries(entry.entries) };
-					} else if (entry.type === "list" && entry.items) {
-						// Caso seja um objeto com "items", traduzir cada item
-						return { ...entry, items: entry.items.map(item => TRANSLATE_DICT[item] || item) };
-					}
-					return entry; // Retornar outros casos sem alteração
-				});
-				return m_entries
-			}
-
-			// function printEntriesAsPlainText(entries) {
-			// 	// Função recursiva para extrair texto plano de todas as entradas
-			// 	entries.forEach(entry => {
-			// 		if (typeof entry === "string") {
-			// 			console.log(entry); // Imprime strings diretamente
-			// 		} else if (typeof entry === "object") {
-			// 			if (entry.type === "list" && entry.items) {
-			// 				// Para listas, imprime cada item
-			// 				entry.items.forEach(item => console.log(item));
-			// 			} else if (entry.entries) {
-			// 				// Recorre em "entries"
-			// 				printEntriesAsPlainText(entry.entries);
-			// 			}
-			// 		}
-			// 	});
-			// }
-			
-			// Traduzir cada `classFeature`
-			return text.map(description => {
-				if (description.entries) {
-					const translatedEntries = translateEntries(description.entries);
-					// printEntriesAsPlainText(translatedEntries);
-					return { ...description, entries: translateEntries(description.entries) };
-				}
-				return description; // Retornar outros casos sem alteração
-			});
-		}
 	
 		static loadRawJSON () {
 			return DataUtil.class._pLoadRawJson = DataUtil.class._pLoadRawJson || (async () => {
 				const index = await DataUtil.loadJSON(`${Renderer.get().baseUrl}data/class/index.json`);
 				const allData = await Promise.all(Object.values(index).map(it => DataUtil.loadJSON(`${Renderer.get().baseUrl}data/class/${it}`)));
+				const TRANSLATE_CLASS_DICT = await DataUtil.loadJSON(`${Renderer.get().baseUrl}data/translations_classes_pt-br.json`);
+				
+
 				
 				return {
 					class: MiscUtil.copyFast(allData.map(it => it.class || []).flat()),
 					subclass: MiscUtil.copyFast(allData.map(it => it.subclass || []).flat()),
-					classFeature: await this.translateTexts(allData.map(it => it.classFeature || []).flat()),
-					subclassFeature: await this.translateTexts(allData.map(it => it.subclassFeature || []).flat()),
+					classFeature: await DataUtil.generic.translate(allData.map(it => it.classFeature || []).flat(), TRANSLATE_CLASS_DICT),
+					subclassFeature: await DataUtil.generic.translate(allData.map(it => it.subclassFeature || []).flat(), TRANSLATE_CLASS_DICT),
 				};
 			})();
 		}
