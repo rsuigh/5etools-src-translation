@@ -1,6 +1,4 @@
 "use strict";
-// import TRANSLATE_DICT from "./translations_pt-br.js";
-
 
 // in deployment, `IS_DEPLOYED = "<version number>";` should be set below.
 globalThis.IS_DEPLOYED = undefined;
@@ -3898,9 +3896,9 @@ class _DataUtilPropConfigMultiSource extends _DataUtilPropConfig {
 		const file = index[source];
 		if (!file) return null;
 		const spellsObj = await this._pLoadSourceEntities({indexKey: source, file});
+		console.log(spellsObj);
 		const TRANSLATE_SPELLS_DICT = await DataUtil.loadJSON(`${Renderer.get().baseUrl}data/spells/translations_spells_pt-br.json`);
 		const translated_spells = await DataUtil.generic.translate(spellsObj, TRANSLATE_SPELLS_DICT)
-		console.log(translated_spells);
 		return {[this._PROP]: translated_spells};
 	}
 
@@ -4544,8 +4542,12 @@ globalThis.DataUtil = {
 		async translate (originalText, DICT) {
 			return originalText.map(description => {
 				if (description.entries) {
+					if (description.entriesHigherLevel) {
+						console.log(description.entriesHigherLevel[0].name);
+						const translatedEntries = translateEntries(description.entriesHigherLevel[0].entries);
+						return { ...description, entriesHigherLevel: translateEntries(description.entriesHigherLevel[0].entries) };
+					}
 					const translatedEntries = translateEntries(description.entries);
-					//printEntriesAsPlainText(translatedEntries);
 					return { ...description, entries: translateEntries(description.entries) };
 				}
 				return description; // Retornar outros casos sem alteração
@@ -4560,6 +4562,7 @@ globalThis.DataUtil = {
 					} else if (typeof entry === "object" && entry.entries) {
 						// Caso seja um objeto com "entries", traduzir recursivamente
 						return { ...entry, entries: translateEntries(entry.entries) };
+
 					} else if (entry.type === "list" && entry.items) {
 						// Caso seja um objeto com "items", traduzir cada item
 						return { ...entry, items: entry.items.map(item => DICT[item] || item) };
@@ -4569,22 +4572,50 @@ globalThis.DataUtil = {
 				return m_entries
 			}
 			
-			// function printEntriesAsPlainText(entries) {
-			// 	// Função recursiva para extrair texto plano de todas as entradas
-			// 	entries.forEach(entry => {
-			// 		if (typeof entry === "string") {
-			// 			console.log(entry); // Imprime strings diretamente
-			// 		} else if (typeof entry === "object") {
-			// 			if (entry.type === "list" && entry.items) {
-			// 				// Para listas, imprime cada item
-			// 				entry.items.forEach(item => console.log(item));
-			// 			} else if (entry.entries) {
-			// 				// Recorre em "entries"
-			// 				printEntriesAsPlainText(entry.entries);
-			// 			}
-			// 		}
-			// 	});
+			// function getAllEntries(obj) {
+			// 	// If it's a string, log it
+			// 	if (typeof obj === "string") {
+			// 		console.log(obj);
+			// 		return;
+			// 	}
+			
+			// 	// If it's an array, process each element
+			// 	if (Array.isArray(obj)) {
+			// 		obj.forEach(item => getAllEntries(item));
+			// 		return;
+			// 	}
+			
+			// 	// If it's an object with entries, process those entries
+			// 	if (typeof obj === "object" && obj !== null && obj.entries) {
+			// 		getAllEntries(obj.entries);
+			// 	}
 			// }
+			// getAllEntries(object);
+
+			// function getAllEntries(obj) {
+			// 	// Log only entriesHigherLevel if they exist
+			// 	if (obj.entriesHigherLevel) {
+			// 		obj.entriesHigherLevel.forEach(item => getAllEntries(item.entries[0]));
+			// 	}
+			
+			// 	// If it's a string, return
+			// 	if (typeof obj === "string") {
+			// 		console.log(obj);
+			// 		return;
+			// 	}
+			
+			// 	// If it's an array, process each element
+			// 	if (Array.isArray(obj)) {
+			// 		obj.forEach(item => getAllEntries(item));
+			// 		return;
+			// 	}
+			
+			// 	// If it's an object with entries, process those entries recursively
+			// 	if (typeof obj === "object" && obj !== null && obj.entries) {
+			// 		getAllEntries(obj.entries);
+			// 	}
+			// }
+			// getAllEntries(spellsObj);
 			
 		},
 
@@ -6116,7 +6147,6 @@ globalThis.DataUtil = {
 			const cacheKey = `site-${isAddBaseRaces}`;
 			const TRANSLATE_RACES_DICT = await DataUtil.loadJSON(`${Renderer.get().baseUrl}data/translations_races_pt-br.json`);
 			const raceAndSubraceJson = await this.loadRawJSON()
-			console.log(raceAndSubraceJson)
 			const transletedRaces = await DataUtil.generic.translate(raceAndSubraceJson.race, TRANSLATE_RACES_DICT)
 			const transletedSubraces = await DataUtil.generic.translate(raceAndSubraceJson.subrace, TRANSLATE_RACES_DICT)
 			const raceAndSubArray = {
