@@ -3886,7 +3886,7 @@ class _DataUtilPropConfigMultiSource extends _DataUtilPropConfig {
 
 	static async _loadJSON ({isUnmerged = false} = {}) {
 		const index = await this.pLoadIndex();
-
+		
 		const allData = await Object.entries(index)
 			.pMap(async ([indexKey, file]) => this._pLoadSourceEntities({indexKey, isUnmerged, file}));
 
@@ -3895,11 +3895,13 @@ class _DataUtilPropConfigMultiSource extends _DataUtilPropConfig {
 
 	static async pLoadSingleSource (source) {
 		const index = await this.pLoadIndex();
-
 		const file = index[source];
 		if (!file) return null;
-
-		return {[this._PROP]: await this._pLoadSourceEntities({indexKey: source, file})};
+		const spellsObj = await this._pLoadSourceEntities({indexKey: source, file});
+		const TRANSLATE_SPELLS_DICT = await DataUtil.loadJSON(`${Renderer.get().baseUrl}data/spells/translations_spells_pt-br.json`);
+		const translated_spells = await DataUtil.generic.translate(spellsObj, TRANSLATE_SPELLS_DICT)
+		console.log(translated_spells);
+		return {[this._PROP]: translated_spells};
 	}
 
 	static async _pLoadSourceEntities ({indexKey = null, isUnmerged = false, file}) {
@@ -5697,6 +5699,7 @@ globalThis.DataUtil = {
 			"charoptions",
 			"rewards",
 		];
+		
 
 		// region Utilities for external applications (i.e., the spell source generation script) to use
 		static setSpellSourceLookup (lookup, {isExternalApplication = false} = {}) {
