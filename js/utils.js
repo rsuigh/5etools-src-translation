@@ -4541,16 +4541,14 @@ globalThis.DataUtil = {
 
 		async translate (originalText, DICT) {
 			return originalText.map(description => {
+				let updatedDescription = { ...description };
 				if (description.entries) {
-					if (description.entriesHigherLevel) {
-						console.log(description.entriesHigherLevel[0].name);
-						const translatedEntries = translateEntries(description.entriesHigherLevel[0].entries);
-						return { ...description, entriesHigherLevel: translateEntries(description.entriesHigherLevel[0].entries) };
-					}
-					const translatedEntries = translateEntries(description.entries);
-					return { ...description, entries: translateEntries(description.entries) };
+					updatedDescription.entries = translateEntries(description.entries);
 				}
-				return description; // Retornar outros casos sem alteração
+				if (description.entriesHigherLevel) {
+					updatedDescription.entriesHigherLevel = translateEntries(description.entriesHigherLevel[0].entries);
+				}
+				return updatedDescription; // Retornar outros casos sem alteração
 			});
 
 
