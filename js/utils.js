@@ -3896,7 +3896,6 @@ class _DataUtilPropConfigMultiSource extends _DataUtilPropConfig {
 		const file = index[source];
 		if (!file) return null;
 		const spellsObj = await this._pLoadSourceEntities({indexKey: source, file});
-		console.log(spellsObj);
 		const TRANSLATE_SPELLS_DICT = await DataUtil.loadJSON(`${Renderer.get().baseUrl}data/spells/translations_spells_pt-br.json`);
 		const translated_spells = await DataUtil.generic.translate(spellsObj, TRANSLATE_SPELLS_DICT)
 		return {[this._PROP]: translated_spells};
@@ -4546,7 +4545,8 @@ globalThis.DataUtil = {
 					updatedDescription.entries = translateEntries(description.entries);
 				}
 				if (description.entriesHigherLevel) {
-					updatedDescription.entriesHigherLevel = translateEntries(description.entriesHigherLevel[0].entries);
+					//console.log(description.entriesHigherLevel);
+					updatedDescription.entriesHigherLevel = translateEntries(description.entriesHigherLevel);
 				}
 				return updatedDescription; // Retornar outros casos sem alteração
 			});
