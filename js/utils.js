@@ -4542,10 +4542,14 @@ globalThis.DataUtil = {
 			return originalText.map(description => {
 				let updatedDescription = { ...description };
 				if (description.entries) {
+					if (description.entries[1]) {
+						if (description.entries[1].items) {
+							updatedDescription.entries[1].items = translateEntries(description.entries[1].items);
+						}
+					}
 					updatedDescription.entries = translateEntries(description.entries);
 				}
 				if (description.entriesHigherLevel) {
-					//console.log(description.entriesHigherLevel);
 					updatedDescription.entriesHigherLevel = translateEntries(description.entriesHigherLevel);
 				}
 				return updatedDescription; // Retornar outros casos sem alteração
@@ -4590,6 +4594,28 @@ globalThis.DataUtil = {
 			// }
 			// getAllEntries(object);
 
+			//console log all items in entries 
+			// const items = description.entries[1].items;
+			// 	items.forEach(item => {
+			// 		if (item.entries) {
+			// 			// Se item.entries é um array, verifica se o índice 0 existe
+			// 			if (Array.isArray(item.entries) && item.entries[0]) {
+			// 				// Se o primeiro elemento também tem uma propriedade entries, imprime-a
+			// 				if (item.entries[0].entries) {
+			// 					console.log(item.entries[0].entries);
+			// 				} else {
+			// 					console.log(item.entries[0]);
+			// 				}
+			// 			} else {
+			// 				// Se item.entries não é um array ou está vazio
+			// 				console.log(item.entries);
+			// 			}
+			// 		} else {
+			// 			// Se item.entries não existe
+			// 			console.log(item);
+			// 		}
+			// 	});
+
 			// function getAllEntries(obj) {
 			// 	// Log only entriesHigherLevel if they exist
 			// 	if (obj.entriesHigherLevel) {
@@ -4613,7 +4639,7 @@ globalThis.DataUtil = {
 			// 		getAllEntries(obj.entries);
 			// 	}
 			// }
-			// getAllEntries(spellsObj);
+			//getAllEntries(spellsObj);
 			
 		},
 
